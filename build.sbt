@@ -5,7 +5,7 @@ val sparkMetaSettings = Seq(
 
 val sparkScalaSettings = Seq(
   scalaVersion := "2.11.8",
-  scalacOptions ++= Seq("-target:jvm-1.8", "-Ypartial-unification")
+  scalacOptions ++= Seq("-target:jvm-1.8")
 )
 
 val sparkDependencies = Seq(
