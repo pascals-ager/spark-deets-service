@@ -1,4 +1,4 @@
-This repository creates a local development environment for Apache Spark(2.3.3) cluster with 3 Node Hadoop(2.8.4) using a Yarn resource manager
+Set up a local development environment for Apache Spark(2.3.3) cluster with 3 Node Hadoop(2.8.4) using Yarn resource manager
 ##############################################################################
 
 How to build
@@ -41,8 +41,8 @@ Services:
 
 Setting up a production cluster from this needs a lot more work. However you are ready to begin building data/ml applications.
 
-node-master:50070  <---- hdfs overview
+192.0.2.2:50070  <---- hdfs overview
 
-node-master:8088   <---- yarn cluster overview
+192.0.2.2:8088   <---- yarn cluster overview
 
 
