@@ -1,5 +1,5 @@
 val sparkMetaSettings = Seq(
-  organization := "userDeetProcessor",
+  organization := "userDeetService",
   version := "0.1"
 )
 
@@ -25,7 +25,7 @@ lazy val assemblySettings = Seq(
 )
 
 lazy val sparkTestProcessor = (project in file("."))
-  .settings(name := "spark-test-processor")
+  .settings(name := "spark-sql-processor")
   .settings(mainClass in Compile := Some("io.pascals.spark.UserDeetService"))
   .settings(mainClass in assembly := Some("io.pascals.spark.UserDeetService"))
   .settings(assemblyJarName in assembly := "user-deet-service.jar")
