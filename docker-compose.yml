@@ -14,7 +14,7 @@ services:
     build:
         context: ./node-master
         dockerfile: Dockerfile
-    image: node-master:advith
+    image: node-master:1.0
     container_name: node-master
     volumes:
         - nodemaster:/hadoop-data/dfs/name
@@ -35,9 +35,9 @@ services:
     depends_on:
         - base
     build:
-        context: ./node1
+        context: ./node-one
         dockerfile: Dockerfile
-    image: node-one:advith
+    image: node-one:1.0
     container_name: node-one
     volumes:
         - node-one:/hadoop-data/dfs/dataone
@@ -56,9 +56,9 @@ services:
     depends_on:
         - base
     build:
-        context: ./node2
+        context: ./node-two
         dockerfile: Dockerfile
-    image: node-two:advith
+    image: node-two:1.0
     container_name: node-two
     volumes:
         - node-two:/hadoop-data/dfs/datatwo
