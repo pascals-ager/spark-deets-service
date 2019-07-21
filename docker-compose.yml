@@ -1,0 +1,88 @@
+version: "2"
+
+services:
+  base:
+    build:
+        context: ./base
+        dockerfile: Dockerfile
+    image: base:advith
+    container_name: base
+
+  node-master:
+    depends_on:
+        - base
+    build:
+        context: ./node-master
+        dockerfile: Dockerfile
+    image: node-master:advith
+    container_name: node-master
+    volumes:
+        - nodemaster:/hadoop-data/dfs/name
+    ports:
+        - "8088:8088"
+        - "50070:50070"
+        - "18080:18080"
+    command: "/run.sh -d -node-master"
+    networks:
+        spark-cluster:
+          ipv4_address: 192.0.2.2
+    extra_hosts:
+        - "node-master:192.0.2.2"
+        - "node-one:192.0.2.3"
+        - "node-two:192.0.2.4"
+
+  node-one:
+    depends_on:
+        - base
+    build:
+        context: ./node1
+        dockerfile: Dockerfile
+    image: node-one:advith
+    container_name: node-one
+    volumes:
+        - node-one:/hadoop-data/dfs/dataone
+    ports:
+        - "50075:50075"
+    command: "/run.sh -d -node-one"
+    networks:
+        spark-cluster:
+          ipv4_address: 192.0.2.3
+    extra_hosts:
+        - "node-master:192.0.2.2"
+        - "node-one:192.0.2.3"
+        - "node-two:192.0.2.4"
+
+  node-two:
+    depends_on:
+        - base
+    build:
+        context: ./node2
+        dockerfile: Dockerfile
+    image: node-two:advith
+    container_name: node-two
+    volumes:
+        - node-two:/hadoop-data/dfs/datatwo
+    ports:
+        - "50078:50075"
+    command: "/run.sh -d -node-two"
+    networks:
+        spark-cluster:
+          ipv4_address: 192.0.2.4
+    extra_hosts:
+        - "node-master:192.0.2.2"
+        - "node-one:192.0.2.3"
+        - "node-two:192.0.2.4"
+
+
+volumes:
+  nodemaster:
+  node-one:
+  node-two:
+
+networks:
+  spark-cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet:  192.0.2.0/16
+          gateway: 192.0.2.1
