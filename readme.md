@@ -91,3 +91,10 @@ How to build and submit the spark fat jar using sbt:
 There seems to be a bug with scoverage adding runtime dependencies on spark fat jar. Hence after a scoverageReport is
 generated, one must clean and build the assembly once again.
 Note: coverage is disabled by default.
+
+## Results
+Results can also be found at user_details.json
+
+## Dependencies
+sbt dependencyDot generates the dependency graph for the project
+
