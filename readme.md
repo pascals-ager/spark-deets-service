@@ -81,3 +81,9 @@ How to build and submit the spark fat jar using sbt:
 [info] Branch coverage....: 100.00%
 [info] Coverage reports completed
 [info] All done. Coverage was [50.51%]
+
+## Results
+Results can also be found at user_details.json
+
+## Dependencies
+sbt dependencyDot generates the dependency graph for the project
