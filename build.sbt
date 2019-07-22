@@ -11,7 +11,9 @@ val sparkScalaSettings = Seq(
 val sparkDependencies = Seq(
   "com.typesafe" % "config" % "1.3.1",
   "org.apache.spark" % "spark-core_2.11" % "2.3.3" % "provided",
-  "org.apache.spark" % "spark-sql_2.11" % "2.3.3" % "provided"
+  "org.apache.spark" % "spark-sql_2.11" % "2.3.3" % "provided",
+  "org.scalactic" %% "scalactic" % "3.0.1" % Test,
+  "org.scalatest" %% "scalatest" % "3.0.1" % Test
 )
 
 
