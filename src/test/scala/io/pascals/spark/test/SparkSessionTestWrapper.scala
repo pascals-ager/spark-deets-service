@@ -4,12 +4,12 @@ import org.apache.spark.sql.SparkSession
 
 trait SparkSessionTestWrapper {
 
-  lazy val spark: SparkSession = {
+  lazy val sparkBuilder: SparkSession.Builder = {
     SparkSession
       .builder()
       .master("local")
       .appName("user deets spark test")
-      .getOrCreate()
+
   }
 
 }
