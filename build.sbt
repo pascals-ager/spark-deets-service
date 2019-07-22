@@ -5,7 +5,9 @@ val sparkMetaSettings = Seq(
 
 val sparkScalaSettings = Seq(
   scalaVersion := "2.11.8",
-  scalacOptions ++= Seq("-target:jvm-1.8")
+  scalacOptions ++= Seq("-target:jvm-1.8"),
+  coverageEnabled := false,
+  coverageExcludedPackages := "io.pascals.spark.models;io.pascals.spark.utils"
 )
 
 val sparkDependencies = Seq(
@@ -23,7 +25,8 @@ lazy val assemblySettings = Seq(
     case PathList("UnusedStubClass.class") => MergeStrategy.discard
     case x => val oldStrategy = (assemblyMergeStrategy in assembly).value
       oldStrategy(x)
-  }
+  },
+  test in assembly := {}
 )
 
 lazy val sparkTestProcessor = (project in file("."))

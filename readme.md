@@ -48,7 +48,7 @@ Setting up a production cluster from this needs a lot more work. However you are
 How to build and submit the spark fat jar using sbt:
 ----------------------------------------------------
 1. Go to root of the project
-2. sbt clean && sbt test &&sbt compile && sbt assembly
+2. sbt clean && sbt test && sbt assembly (will skip tests)
 3. sbt assembly generates the fat jar @ /target/scala-2.11/user-deet-service.jar
 4. For submitting the above jar to the previously created spark cluster, one must have a local spark (2.3) client lib installation
 5. Say, @ /usr/local/spark/spark-2.3.3-bin-hadoop2.7
@@ -64,20 +64,30 @@ How to build and submit the spark fat jar using sbt:
 3. Page exits data is used to calculate total exits
 
 ## Test results
-1. sbt test Test are pretty slow. Can maybe put all tests into a single test case.
 [info] UserDeetServiceTest:
 [info] - ConfigsTest
 [info] - Basic read counts
 [info] - Events aggregate test
-[info] - User Details test
-[info] Run completed in 2 minutes, 42 seconds.
-[info] Total number of tests run: 4
+[info] Run completed in 2 minutes, 40 seconds.
+[info] Total number of tests run: 3
 [info] Suites: completed 1, aborted 0
-[info] Tests: succeeded 4, failed 0, canceled 0, ignored 0, pending 0
-[info] All tests passed.
-[success] Total time: 206 s, completed Jul 22, 2019 9:51:02 AM
-2. sbt coverage coverageReport
-[info] Statement coverage.: 50.51%
-[info] Branch coverage....: 100.00%
+[info] Tests: succeeded 3, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.M
+
+## sbt "set coverageEnable := true" coverage test coverageReport
+[info] Waiting for measurement data to sync...
+[info] Reading scoverage instrumentation [/home/scala/spark-deets-service/target/scala-2.11/scoverage-data/scoverage.coverage.xml]
+[info] Reading scoverage measurements...
+[info] Generating scoverage reports...
+[info] Written Cobertura report [/home/scala/spark-deets-service/target/scala-2.11/coverage-report/cobertura.xml]
+[info] Written XML coverage report [/home/scala/spark-deets-service/target/scala-2.11/scoverage-report/scoverage.xml]
+[info] Written HTML coverage report [/home/scala/spark-deets-service/target/scala-2.11/scoverage-report/index.html]
+[info] Statement coverage.: 62.07%
+[info] Branch coverage....: 66.67%
 [info] Coverage reports completed
-[info] All done. Coverage was [50.51%]
+[info] All done. Coverage was [62.07%]
+
+
+There seems to be a bug with scoverage adding runtime dependencies on spark fat jar. Hence after a scoverageReport is
+generated, one must clean and build the assembly once again.
+Note: coverage is disabled by default.

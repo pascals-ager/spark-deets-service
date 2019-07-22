@@ -3,19 +3,20 @@ package io.pascals.spark.test
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import io.pascals.spark.models._
-import io.pascals.spark.utils._
-import org.apache.spark.sql.Dataset
+import io.pascals.spark.transformer._
+import org.apache.spark.sql.{Dataset, SparkSession}
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.util.{Failure, Success}
 
 class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers with SparkSessionTestWrapper{
 
-  override def beforeAll: Unit = {
-
-  }
+  val logger: Logger = LoggerFactory.getLogger(getClass)
   val brochuresClickSrc: String = getClass.getResource("/brochure_clicks.json").getPath
   val pageTurnsSrc: String = getClass.getResource("/page_turns.json").getPath
   val pageEntersSrc: String = getClass.getResource("/enters.json").getPath
   val pageExitsSrc: String = getClass.getResource("/exits.json").getPath
-  val spark = sparkBuilder.getOrCreate()
+  val spark: SparkSession = sparkBuilder.getOrCreate()
 
   test ("ConfigsTest") {
     val appConfig: Config = ConfigFactory.parseResources("test.conf")
@@ -65,40 +66,33 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
     val pageExit: Dataset[PageExit] = spark.read.json(pageExitsSrc).as[PageExit]
     val userDatasets: Seq[Dataset[_ >: PageTurn with PageEnter with PageExit <: PageAccess]] = Seq(pageTurn, pageEnter, pageExit)
 
-    val transformedDS: Seq[Dataset[UserEventTotal]] = userEventAggregator(brochureClick, userDatasets)(spark)
-    transformedDS.head.count() should equal(23)
-    transformedDS.head.columns should equal(Array("user_ident", "total_events"))
-    transformedDS.tail.head.count() should equal(23)
-    transformedDS.tail.head.columns should equal(Array("user_ident", "total_events"))
-    transformedDS.tail.tail.head.count() should equal(23)
-    transformedDS.tail.tail.head.columns should equal(Array("user_ident", "total_events"))
-
-  }
-
-  test( "User Details test" ) {
-
-    import spark.implicits._
-
-    /* Read source files into typed Datasets */
-    val brochureClick: Dataset[BrochureClick] = spark.read.json(brochuresClickSrc).as[BrochureClick]
-    val pageTurn: Dataset[PageTurn] = spark.read.json(pageTurnsSrc).as[PageTurn]
-    val pageEnter: Dataset[PageEnter] = spark.read.json(pageEntersSrc).as[PageEnter]
-    val pageExit: Dataset[PageExit] = spark.read.json(pageExitsSrc).as[PageExit]
-    val userDatasets: Seq[Dataset[_ >: PageTurn with PageEnter with PageExit <: PageAccess]] = Seq(pageTurn, pageEnter, pageExit)
-
-    val transformedDS: Seq[Dataset[UserEventTotal]] = userEventAggregator(brochureClick, userDatasets)(spark)
-    val userDeetsDescriptionDS: Dataset[UserDeetsDescription] = userDetailsMergeFromEvents(transformedDS)(spark)
-    userDeetsDescriptionDS.count() should equal(23)
-    userDeetsDescriptionDS.columns should equal(Array("user_ident", "total_views", "total_enters", "total_exits"))
-
+    userEventAggregator(brochureClick, userDatasets)(spark) match {
+      case Success(transformedDS: Seq[Dataset[UserEventTotal]]) => {
+        transformedDS.head.count() should equal(23)
+        transformedDS.head.columns should equal(Array("user_ident", "total_events"))
+        transformedDS.tail.head.count() should equal(23)
+        transformedDS.tail.head.columns should equal(Array("user_ident", "total_events"))
+        transformedDS.tail.tail.head.count() should equal(23)
+        transformedDS.tail.tail.head.columns should equal(Array("user_ident", "total_events"))
+        userDetailsMergeFromEvents(transformedDS)(spark) match {
+          case Success(userDeetsDescriptionDS: Dataset[UserDeetsDescription]) => {
+            userDeetsDescriptionDS.count() should equal(23)
+            userDeetsDescriptionDS.columns should equal(Array("user_ident", "total_views", "total_enters", "total_exits"))
+          }
+          case Failure(throwable) => {
+            logger.error(s"Failure during test execution of function userDetailsMergeFromEvents $throwable")
+            assert(1 == 2)
+          }
+        }
+      }
+      case Failure(throwable) => {
+        logger.error(s"Failure during test execution of function userEventAggregator $throwable")
+        assert(1 == 2)
+      }
+    }
   }
 
    override def afterAll {
      spark.close()
   }
-
-
-
-
-
 }
