@@ -1,5 +1,4 @@
-FROM base:advith
-MAINTAINER Advith Nagappa
+FROM base:1.0
 
 HEALTHCHECK CMD curl -f http://localhost:50070/ || exit 1
 

@@ -8,6 +8,7 @@ import org.apache.spark.SparkException
 import org.apache.spark.sql.{Dataset, SaveMode, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 object UserDeetService extends App {
@@ -49,9 +50,8 @@ object UserDeetService extends App {
       logger.error(s"Spark Exception occurred. See trace for details $exception")
       throw new SparkException("Spark Exception occurred", exception)
     }
-    case throwable: Throwable => {
-      logger.error(s"Unknown exception occured. See the trace for details $throwable")
-      throw new SparkException("Unknown Exception occurred", throwable)
+    case NonFatal(exc) => {
+      logger.error(s"Unknown exception occured. See the trace for details $exc")
     }
   }
 }

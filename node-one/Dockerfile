@@ -1,9 +1,9 @@
-FROM base:advith
-MAINTAINER Advith Nagappa
+FROM base:1.0
 
 HEALTHCHECK CMD curl -f http://localhost:50075/ || exit 1
 
 RUN mkdir -p /hadoop-data/dfs/dataone
+
 VOLUME /hadoop-data/dfs/dataone
 
 # Expose http port for datanode

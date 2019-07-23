@@ -18,8 +18,8 @@ package object transformer {
 
   def userEventAggregator(brochureClick: Dataset[BrochureClick], userDataset: => Seq[Dataset[_ >: PageExit with PageEnter with PageTurn <: PageAccess]])(implicit spark: SparkSession): Try[Seq[Dataset[UserEventTotal]]] = {
     import spark.implicits._
-    try {
-      val userEventTotalDS = userDataset.map(
+    Try(
+      userDataset.map(
         ds => {
           brochureClick.joinWith(ds, brochureClick.col("brochure_click_uuid") === ds.col("brochure_click_uuid"), "left").map {
             case (click: BrochureClick, turn: PageAccess) => ClickEvent(click.user_ident, turn.page_view_mode)
@@ -31,13 +31,7 @@ package object transformer {
           }.groupBy("user_ident").agg(sum("event_count") as "total_events").as[UserEventTotal]
         }
       )
-      Success(userEventTotalDS)
-    }
-    catch {
-      case throwable: Throwable => {
-        Failure(throwable)
-      }
-    }
+    )
   }
 
   /**
@@ -48,24 +42,20 @@ package object transformer {
   def userDetailsMergeFromEvents(transformedDS: Seq[Dataset[UserEventTotal]])(implicit spark: SparkSession): Try[Dataset[UserDeetsDescription]] = {
     /* Not ideal, but statically extracting the transformedDS in order */
     import spark.implicits._
-    try {
-      val pageTurnTransformedDS = transformedDS.head
-      val pageEnterTransformedDS = transformedDS.tail.head
-      val pageExitTransformedDS = transformedDS.tail.tail.head
-
+    val pageTurnTransformedDS = transformedDS.head
+    val pageEnterTransformedDS = transformedDS(1)
+    val pageExitTransformedDS = transformedDS(2)
+    val tempJoinDS: Try[Dataset[UserDeetsDescription]] =  Try(
       /* Join the three event Datasets while mapping the individual counts into the appropriate variable of UserDeetsDescription model*/
-      val tempDS: Dataset[UserDeetsDescription] = pageTurnTransformedDS.joinWith(pageEnterTransformedDS, pageTurnTransformedDS.col("user_ident") === pageEnterTransformedDS.col("user_ident"), "inner").map {
+        pageTurnTransformedDS.joinWith(pageEnterTransformedDS, pageTurnTransformedDS.col("user_ident") === pageEnterTransformedDS.col("user_ident"), "inner").map {
         case (view: UserEventTotal, turns: UserEventTotal) => UserDeetsDescription(view.user_ident, view.total_events, turns.total_events, Some(0))
-      }
-      val userDeetDS = tempDS.joinWith(pageExitTransformedDS, tempDS.col("user_ident") === pageExitTransformedDS.col("user_ident"), "inner").map {
-        case (deets: UserDeetsDescription, exits: UserEventTotal) => UserDeetsDescription(deets.user_ident, deets.total_views, deets.total_enters, exits.total_events)
-      }
-      Success(userDeetDS)
-    }
-    catch{
-      case throwable: Throwable => {
-        Failure(throwable)
-      }
+      })
+    tempJoinDS match {
+      case Success(tempDS: Dataset[UserDeetsDescription]) =>
+        Try(tempDS.joinWith (pageExitTransformedDS, tempDS.col ("user_ident") === pageExitTransformedDS.col ("user_ident"), "inner").map {
+            case (deets: UserDeetsDescription, exits: UserEventTotal) => UserDeetsDescription (deets.user_ident, deets.total_views, deets.total_enters, exits.total_events)
+        })
+      case Failure(ex: Throwable) => Failure(ex)
     }
   }
 

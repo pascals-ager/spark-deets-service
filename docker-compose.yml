@@ -5,7 +5,7 @@ services:
     build:
         context: ./base
         dockerfile: Dockerfile
-    image: base:advith
+    image: base:1.0
     container_name: base
 
   node-master:

@@ -17,6 +17,7 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
   val pageEntersSrc: String = getClass.getResource("/enters.json").getPath
   val pageExitsSrc: String = getClass.getResource("/exits.json").getPath
   val spark: SparkSession = sparkBuilder.getOrCreate()
+  import spark.implicits._
 
   test ("ConfigsTest") {
     val appConfig: Config = ConfigFactory.parseResources("test.conf")
@@ -36,10 +37,9 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
     pageEntersSrc should equal("hdfs://node-master:8020/tmp/enters.json")
     pageExitsSrc should equal("hdfs://node-master:8020/tmp/exits.json")
     userDeetsDest should equal("hdfs://node-master:8020/tmp/user_details")
-  }
+      }
 
   test ("Basic read counts") {
-    import spark.implicits._
 
     /* Read source files into typed Datasets */
     val brochureClick: Dataset[BrochureClick] = spark.read.json(brochuresClickSrc).as[BrochureClick]
@@ -57,8 +57,6 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
 
   test( "Events aggregate test" ) {
 
-    import spark.implicits._
-
     /* Read source files into typed Datasets */
     val brochureClick: Dataset[BrochureClick] = spark.read.json(brochuresClickSrc).as[BrochureClick]
     val pageTurn: Dataset[PageTurn] = spark.read.json(pageTurnsSrc).as[PageTurn]
@@ -68,12 +66,13 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
 
     userEventAggregator(brochureClick, userDatasets)(spark) match {
       case Success(transformedDS: Seq[Dataset[UserEventTotal]]) => {
-        transformedDS.head.count() should equal(23)
-        transformedDS.head.columns should equal(Array("user_ident", "total_events"))
-        transformedDS.tail.head.count() should equal(23)
-        transformedDS.tail.head.columns should equal(Array("user_ident", "total_events"))
-        transformedDS.tail.tail.head.count() should equal(23)
-        transformedDS.tail.tail.head.columns should equal(Array("user_ident", "total_events"))
+        transformedDS.length should equal(3)
+        transformedDS(0).count() should equal(23)
+        transformedDS(0).columns should equal(Array("user_ident", "total_events"))
+        transformedDS(1).count() should equal(23)
+        transformedDS(1).columns should equal(Array("user_ident", "total_events"))
+        transformedDS(2).count() should equal(23)
+        transformedDS(2).columns should equal(Array("user_ident", "total_events"))
         userDetailsMergeFromEvents(transformedDS)(spark) match {
           case Success(userDeetsDescriptionDS: Dataset[UserDeetsDescription]) => {
             userDeetsDescriptionDS.count() should equal(23)
