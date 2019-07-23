@@ -42,21 +42,25 @@ package object transformer {
   def userDetailsMergeFromEvents(transformedDS: Seq[Dataset[UserEventTotal]])(implicit spark: SparkSession): Try[Dataset[UserDeetsDescription]] = {
     /* Not ideal, but statically extracting the transformedDS in order */
     import spark.implicits._
-    val pageTurnTransformedDS = transformedDS.head
-    val pageEnterTransformedDS = transformedDS(1)
-    val pageExitTransformedDS = transformedDS(2)
-    val tempJoinDS: Try[Dataset[UserDeetsDescription]] =  Try(
-      /* Join the three event Datasets while mapping the individual counts into the appropriate variable of UserDeetsDescription model*/
-        pageTurnTransformedDS.joinWith(pageEnterTransformedDS, pageTurnTransformedDS.col("user_ident") === pageEnterTransformedDS.col("user_ident"), "inner").map {
-        case (view: UserEventTotal, turns: UserEventTotal) => UserDeetsDescription(view.user_ident, view.total_events, turns.total_events, Some(0))
-      })
-    tempJoinDS match {
-      case Success(tempDS: Dataset[UserDeetsDescription]) =>
-        Try(tempDS.joinWith (pageExitTransformedDS, tempDS.col ("user_ident") === pageExitTransformedDS.col ("user_ident"), "inner").map {
-            case (deets: UserDeetsDescription, exits: UserEventTotal) => UserDeetsDescription (deets.user_ident, deets.total_views, deets.total_enters, exits.total_events)
-        })
-      case Failure(ex: Throwable) => Failure(ex)
+    transformedDS match {
+      case pageTurnTransformedDS :: pageEnterTransformedDS :: pageExitTransformedDS :: Nil =>
+        val tempJoinDS: Try[Dataset[UserDeetsDescription]] =  Try(
+          /* Join the three event Datasets while mapping the individual counts into the appropriate variable of UserDeetsDescription model*/
+          pageTurnTransformedDS.joinWith(pageEnterTransformedDS, pageTurnTransformedDS.col("user_ident") === pageEnterTransformedDS.col("user_ident"), "inner").map {
+            case (view: UserEventTotal, turns: UserEventTotal) => UserDeetsDescription(view.user_ident, view.total_events, turns.total_events, Some(0))
+          })
+        tempJoinDS match {
+          case Success(tempDS: Dataset[UserDeetsDescription]) =>
+            Try(tempDS.joinWith (pageExitTransformedDS, tempDS.col ("user_ident") === pageExitTransformedDS.col ("user_ident"), "inner").map {
+              case (deets: UserDeetsDescription, exits: UserEventTotal) => UserDeetsDescription (deets.user_ident, deets.total_views, deets.total_enters, exits.total_events)
+            })
+          case Failure(ex: Throwable) => Failure(ex)
+        }
+
+      case _ => Failure(new Throwable("The Join implementation expects three Datasets in order PageTurn, PageEnter, PageExit"))
     }
+
+
   }
 
 
