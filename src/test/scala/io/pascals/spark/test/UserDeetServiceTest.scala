@@ -39,7 +39,8 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
     userDeetsDest should equal("hdfs://node-master:8020/tmp/user_details")
       }
 
-  test ("Basic read counts") {
+
+  test( "Events aggregate test" ) {
 
     /* Read source files into typed Datasets */
     val brochureClick: Dataset[BrochureClick] = spark.read.json(brochuresClickSrc).as[BrochureClick]
@@ -53,15 +54,6 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
     pageExit.count() should equal(23)
     brochureClick.select("user_ident").distinct().count() should equal(23)
 
-  }
-
-  test( "Events aggregate test" ) {
-
-    /* Read source files into typed Datasets */
-    val brochureClick: Dataset[BrochureClick] = spark.read.json(brochuresClickSrc).as[BrochureClick]
-    val pageTurn: Dataset[PageTurn] = spark.read.json(pageTurnsSrc).as[PageTurn]
-    val pageEnter: Dataset[PageEnter] = spark.read.json(pageEntersSrc).as[PageEnter]
-    val pageExit: Dataset[PageExit] = spark.read.json(pageExitsSrc).as[PageExit]
     val userDatasets: Seq[Dataset[_ >: PageTurn with PageEnter with PageExit <: PageAccess]] = Seq(pageTurn, pageEnter, pageExit)
 
     userEventAggregator(brochureClick, userDatasets)(spark) match {

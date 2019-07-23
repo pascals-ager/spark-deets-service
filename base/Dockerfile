@@ -6,13 +6,17 @@ RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-bac
 
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
-RUN apt-get -o Acquire::Check-Valid-Until=false update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Check-Valid-Until=false install -t jessie-backports -y --no-install-recommends openjdk-8-jdk:amd64=8u171-b11-1~bpo8+1
+RUN apt-get -o Acquire::Check-Valid-Until=false update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Check-Valid-Until=false install -t jessie-backports -y --no-install-recommends openjdk-8-jdk:amd64=8u171-b11-1~bpo8+1 \
+    && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Check-Valid-Until=false install -y --no-install-recommends net-tools=1.60-26+b1 curl=7.38.0-4+deb8u15 \
+    && apt-get -o Acquire::Check-Valid-Until=false install -y --no-install-recommends netcat=1.10-41 \
+    && apt-get -o Acquire::Check-Valid-Until=false install -y --no-install-recommends openssh-server=1:6.7p1-5+deb8u8 \
+    && apt-get -o Acquire::Check-Valid-Until=false install -y --no-install-recommends openssh-client=1:6.7p1-5+deb8u8 \
+    && apt-get -o Acquire::Check-Valid-Until=false install -y --no-install-recommends wget=1.16-1+deb8u6 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
-
-RUN apt-get -o Acquire::Check-Valid-Until=false update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Check-Valid-Until=false install -y --no-install-recommends net-tools=1.60-26+b1 curl=7.38.0-4+deb8u15
-
-RUN apt-get -o Acquire::Check-Valid-Until=false install netcat=1.10-41 -y && apt-get -o Acquire::Check-Valid-Until=false install -y openssh-server=1:6.7p1-5+deb8u8 && apt-get -o Acquire::Check-Valid-Until=false install -y openssh-client=1:6.7p1-5+deb8u8
 
 ENV HADOOP_VERSION 2.8.4
 ENV HADOOP_URL https://www.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz
@@ -79,8 +83,6 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HADOOP_PREFIX/lib/native
 ENV PATH $PATH:$SPARK_PREFIX/bin
 
 COPY /conf/spark-defaults.conf $SPARK_HOME/conf/spark-defaults.conf
-
-RUN  apt-get -o Acquire::Check-Valid-Until=false install wget=1.16-1+deb8u6 -y
 
 RUN mkdir -p /tmp/exercise
 COPY /exercise/brochure_clicks.json /tmp/exercise/brochure_clicks.json

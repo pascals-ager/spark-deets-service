@@ -23,7 +23,7 @@ package object transformer {
         ds => {
           brochureClick.joinWith(ds, brochureClick.col("brochure_click_uuid") === ds.col("brochure_click_uuid"), "left").map {
             case (click: BrochureClick, turn: PageAccess) => ClickEvent(click.user_ident, turn.page_view_mode)
-            case (click: BrochureClick, null) => ClickEvent(click.user_ident, Some("None"))
+            case (click: BrochureClick, _) => ClickEvent(click.user_ident, Some("None"))
           }.map {
             case ClickEvent(user_ident, Some("DOUBLE_PAGE_MODE")) => UserEventCount(user_ident, Some(2))
             case ClickEvent(user_ident, Some("SINGLE_PAGE_MODE")) => UserEventCount(user_ident, Some(1))
