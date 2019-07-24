@@ -29,7 +29,9 @@ object UserDeetService extends App {
 
     logger.info("Transforming the events datasets into generic UserEventTotal dataset")
     /* Get intermediate counts for all three events -> turns, enters, exits */
-   userEventAggregator(brochureClick, userDatasets) match {
+   userEventCounter(brochureClick, userDatasets).map(userEventAggregator).map(userEventsMerge)
+
+      /*
       case Success(transformedDS:  Seq[Dataset[UserEventTotal]]) =>
         logger.info("Joining the UserEventTotal datasets on user_ident and mapping counts to appropriate variables in UserDeetsDescription")
         userDetailsMergeFromEvents(transformedDS) match {
@@ -39,11 +41,8 @@ object UserDeetService extends App {
         case Failure(throwable: Throwable) =>
           logger.error(s"Exception occurred in function userDetailsMergeFromEvents: $throwable")
             throw new SparkException("Exception occurred in userDetailsMergeFromEvents function", throwable)
-      }
-      case Failure(throwable: Throwable) =>
-        logger.error(s"Exception occurred in function userEventAggregator: $throwable")
-        throw new SparkException("Exception occurred in userEventAggregator function", throwable)
-    }
+            */
+
   }
   catch {
     case exception: SparkException => {
