@@ -9,7 +9,6 @@ import org.apache.spark.sql.{Dataset, SaveMode, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
 
 object UserDeetService extends App {
 
@@ -29,12 +28,12 @@ object UserDeetService extends App {
 
     logger.info("Transforming the events datasets into generic UserEventTotal dataset")
     /* Get intermediate counts for all three events -> turns, enters, exits */
-     userEventCounter(brochureClick, userDatasets)
-     .flatMap(userEventAggregator)
-      .flatMap(userEventsMerge) match {
-       case Success(ds: Dataset[UserDeetsDescription]) =>  ds.coalesce(1).write.mode(SaveMode.Overwrite).json(userDeetsDest)
-       case Failure(exception) => throw new SparkException("Exception occurred in userDetailsMergeFromEvents function", exception)
-     }
+
+      for {
+        seqPageAccess <- userEventCounter(brochureClick, userDatasets)
+        seqUserDetails <- userEventAggregator(seqPageAccess)
+        userDetails <- userEventsMerge(seqUserDetails)
+      } yield userDetails.coalesce(1).write.mode(SaveMode.Overwrite).json(userDeetsDest)
 
   }
   catch {

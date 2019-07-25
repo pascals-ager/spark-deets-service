@@ -1,8 +1,10 @@
 package io.pascals.spark
 
 import io.pascals.spark.models._
+import org.apache.spark
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.functions._
+
 import scala.util.Try
 
 package object transformer {
@@ -45,24 +47,24 @@ package object transformer {
     pageAccessCounts.map{
       pa => pa.head match {
         case PageAccessEventCount(_, _ , PAGE_TURN.event) => pa.groupBy("user_ident").agg(sum("event_count") as "total_views")
-            .withColumn("total_enters", lit(Some(0)))
-           .withColumn("total_exits", lit(Some(0)))
-          .withColumn("total_undefined", lit(Some(0)))
+            .withColumn("total_enters", typedLit(Some(0)))
+           .withColumn("total_exits", typedLit(Some(0)))
+          .withColumn("total_undefined", typedLit(Some(0)))
           .as[UserDeetsDescription]
         case PageAccessEventCount(_, _ , ENTER_VIEW.event) => pa.groupBy("user_ident").agg(sum("event_count") as "total_enters")
-          .withColumn("total_views", lit(Some(0)))
-          .withColumn("total_exits", lit(Some(0)))
-          .withColumn("total_undefined", lit(Some(0)))
+          .withColumn("total_views", typedLit(Some(0)))
+          .withColumn("total_exits", typedLit(Some(0)))
+          .withColumn("total_undefined", typedLit(Some(0)))
           .as[UserDeetsDescription]
         case PageAccessEventCount(_, _ , EXIT_VIEW.event) => pa.groupBy("user_ident").agg(sum("event_count") as "total_exits")
-          .withColumn("total_views", lit(Some(0)))
-          .withColumn("total_enters", lit(Some(0)))
-          .withColumn("total_undefined", lit(Some(0)))
+          .withColumn("total_views", typedLit(Some(0)))
+          .withColumn("total_enters", typedLit(Some(0)))
+          .withColumn("total_undefined", typedLit(Some(0)))
           .as[UserDeetsDescription]
         case PageAccessEventCount(_, _ , UNDEFINED.event) => pa.groupBy("user_ident").agg(sum("event_count") as "total_undefined")
-          .withColumn("total_views", lit(Some(0)))
-          .withColumn("total_enters", lit(Some(0)))
-          .withColumn("total_exits", lit(Some(0)))
+          .withColumn("total_views", typedLit(Some(0)))
+          .withColumn("total_enters", typedLit(Some(0)))
+          .withColumn("total_exits", typedLit(Some(0)))
           .as[UserDeetsDescription]
         case _ => spark.emptyDataset[UserDeetsDescription]
       }
@@ -72,11 +74,9 @@ package object transformer {
 
   /**
     * @param  userEventTotals Seq of UserEventTotal Dataset i.e PageTurn, PageEnter and PageExit in that exact order
-    * @param  spark implicit spark session
     * @return UserDeetsDescription Dataset
     * */
   def userEventsMerge(userEventTotals: Seq[Dataset[UserDeetsDescription]])(implicit spark: SparkSession): Try[Dataset[UserDeetsDescription]] = {
-    /* Not ideal, but statically extracting the transformedDS in order */
     import spark.implicits._
     Try(
       userEventTotals.reduce{

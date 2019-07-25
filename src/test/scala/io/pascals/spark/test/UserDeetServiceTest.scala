@@ -7,7 +7,7 @@ import io.pascals.spark.transformer._
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers with SparkSessionTestWrapper{
 
@@ -16,7 +16,7 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
   val pageTurnsSrc: String = getClass.getResource("/page_turns.json").getPath
   val pageEntersSrc: String = getClass.getResource("/enters.json").getPath
   val pageExitsSrc: String = getClass.getResource("/exits.json").getPath
-  val spark: SparkSession = sparkBuilder.getOrCreate()
+  implicit val spark: SparkSession = sparkBuilder.getOrCreate()
   import spark.implicits._
 
   test ("ConfigsTest") {
@@ -56,31 +56,14 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
 
     val userDatasets: Seq[Dataset[_ >: PageTurn with PageEnter with PageExit <: PageAccess]] = Seq(pageTurn, pageEnter, pageExit)
 
-    userEventAggregator(brochureClick, userDatasets)(spark) match {
-      case Success(transformedDS: Seq[Dataset[UserEventTotal]]) => {
-        transformedDS.length should equal(3)
-        transformedDS(0).count() should equal(23)
-        transformedDS(0).columns should equal(Array("user_ident", "total_events"))
-        transformedDS(1).count() should equal(23)
-        transformedDS(1).columns should equal(Array("user_ident", "total_events"))
-        transformedDS(2).count() should equal(23)
-        transformedDS(2).columns should equal(Array("user_ident", "total_events"))
-        userDetailsMergeFromEvents(transformedDS)(spark) match {
-          case Success(userDeetsDescriptionDS: Dataset[UserDeetsDescription]) => {
-            userDeetsDescriptionDS.count() should equal(23)
-            userDeetsDescriptionDS.columns should equal(Array("user_ident", "total_views", "total_enters", "total_exits"))
-          }
-          case Failure(throwable) => {
-            logger.error(s"Failure during test execution of function userDetailsMergeFromEvents $throwable")
-            assert(1 == 2)
-          }
-        }
-      }
-      case Failure(throwable) => {
-        logger.error(s"Failure during test execution of function userEventAggregator $throwable")
-        assert(1 == 2)
-      }
-    }
+
+    for {
+      seqPageAccess <- userEventCounter(brochureClick, userDatasets)
+      seqUserDetails <- userEventAggregator(seqPageAccess)
+      userDetails <- userEventsMerge(seqUserDetails)
+    } yield userDetails.show()
+
+
   }
 
    override def afterAll {
