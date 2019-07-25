@@ -1,12 +1,9 @@
 package io.pascals.spark
 
 import io.pascals.spark.models._
-import org.apache.spark.SparkException
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.functions._
-import org.slf4j.{Logger, LoggerFactory}
-
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 package object transformer {
 
@@ -28,12 +25,19 @@ package object transformer {
           }.map {
             case PageAccessEvent(user_ident, Some("DOUBLE_PAGE_MODE"), event) => PageAccessEventCount(user_ident, Some(2), event)
             case PageAccessEvent(user_ident, Some("SINGLE_PAGE_MODE"), event) => PageAccessEventCount(user_ident, Some(1), event)
-            case PageAccessEvent(user_ident, Some("None"), event) => PageAccessEventCount(user_ident, Some(0), event)
+            case PageAccessEvent(user_ident, Some(_), event) => PageAccessEventCount(user_ident, Some(0), event)
+            case PageAccessEvent(user_ident, None, event) => PageAccessEventCount(user_ident, Some(0), event)
           }.as[PageAccessEventCount]
         }
       )
     )
   }
+
+  /**
+    * @param  pageAccessCounts Seq of PageAccessEventCount Dataset
+    * @param  spark implicit spark session
+    * @return Seq of UserDeetsDescription Dataset
+    * */
 
   def userEventAggregator(pageAccessCounts: Seq[Dataset[PageAccessEventCount]])(implicit spark: SparkSession): Try[Seq[Dataset[UserDeetsDescription]]] = {
     import spark.implicits._
@@ -73,6 +77,7 @@ package object transformer {
     * */
   def userEventsMerge(userEventTotals: Seq[Dataset[UserDeetsDescription]])(implicit spark: SparkSession): Try[Dataset[UserDeetsDescription]] = {
     /* Not ideal, but statically extracting the transformedDS in order */
+    import spark.implicits._
     Try(
       userEventTotals.reduce{
         (ue1: Dataset[UserDeetsDescription], ue2: Dataset[UserDeetsDescription]) =>
