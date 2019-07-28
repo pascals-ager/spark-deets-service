@@ -36,13 +36,7 @@ package object models {
 
   sealed case class UserEventTotal(user_ident: Option[String], total_events: Option[BigInt], override val event: Option[String]) extends EventType
 
-  sealed case class PageTurnTotal(user_ident: Option[String], total_views: Option[BigInt])
-  sealed case class PageEnterTotal(user_ident: Option[String], total_enters: Option[BigInt])
-  sealed case class PageExitTotal(user_ident: Option[String], total_exits: Option[BigInt])
-  sealed case class UndefinedTotal(user_ident: Option[String], total_undefined: Option[BigInt])
-
-
   /* Data model of the final result Dataset*/
-  sealed case class UserDeetsDescription(user_ident: Option[String], total_views: Option[BigInt], total_enters: Option[BigInt], total_exits: Option[BigInt], total_undefined: Option[String])
+  sealed case class UserDeetsDescription(user_ident: Option[String], total_views: Option[BigInt], total_enters: Option[BigInt], total_exits: Option[BigInt], total_undefined: Option[BigInt])
 
 }

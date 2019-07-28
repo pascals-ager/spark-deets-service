@@ -5,9 +5,11 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import io.pascals.spark.models._
 import io.pascals.spark.transformer._
 import org.apache.spark.sql.{Dataset, SparkSession}
+import org.apache.spark.sql.functions._
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.{Failure, Success, Try}
+
 
 class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers with SparkSessionTestWrapper{
 
@@ -57,11 +59,23 @@ class UserDeetServiceTest extends FunSuite with BeforeAndAfterAll with Matchers 
     val userDatasets: Seq[Dataset[_ >: PageTurn with PageEnter with PageExit <: PageAccess]] = Seq(pageTurn, pageEnter, pageExit)
 
 
-    for {
+    val ds: Try[Dataset[UserDeetsDescription]] = for {
       seqPageAccess <- userEventCounter(brochureClick, userDatasets)
       seqUserDetails <- userEventAggregator(seqPageAccess)
       userDetails <- userEventsMerge(seqUserDetails)
-    } yield userDetails.show()
+    } yield userDetails
+
+    ds match {
+      case Success(deets) => {
+        deets.count() should equal(23)
+        val ds_one: UserDeetsDescription = deets.filter($"user_ident" === "146360126356971").select("*").as[UserDeetsDescription].head
+        val ds_two: UserDeetsDescription = UserDeetsDescription(Some("146360126356971"), Some(60), Some(4), Some(4), Some(0))
+        ds_one shouldEqual ds_two
+      }
+      case Failure(_) => {
+
+      }
+    }
 
 
   }

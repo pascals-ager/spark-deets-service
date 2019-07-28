@@ -1,13 +1,15 @@
 package io.pascals.spark
 
 import io.pascals.spark.models._
-import org.apache.spark
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.functions._
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.Try
 
 package object transformer {
+
+  val logger: Logger = LoggerFactory.getLogger(getClass)
 
   /**
     * @param  brochureClick BrochureClick Dataset
@@ -22,8 +24,14 @@ package object transformer {
       userDataset.map(
         ds => {
           brochureClick.joinWith(ds, brochureClick.col("brochure_click_uuid") === ds.col("brochure_click_uuid"), "left").map {
-            case (click: BrochureClick, turn: PageAccess) => PageAccessEvent(click.user_ident, turn.page_view_mode, turn.event)
-            case (click: BrochureClick, _) => PageAccessEvent(click.user_ident, Some("None"), UNDEFINED.event)
+            case (click: BrochureClick, turn: PageAccess) => {
+              logger.info(s"matched to a PageAccess event of type ${turn.event}")
+              PageAccessEvent(click.user_ident, turn.page_view_mode, turn.event)
+            }
+            case (click: BrochureClick, _) => {
+              logger.info(s"matched to another undefined event")
+              PageAccessEvent(click.user_ident, Some("None"), UNDEFINED.event)
+            }
           }.map {
             case PageAccessEvent(user_ident, Some("DOUBLE_PAGE_MODE"), event) => PageAccessEventCount(user_ident, Some(2), event)
             case PageAccessEvent(user_ident, Some("SINGLE_PAGE_MODE"), event) => PageAccessEventCount(user_ident, Some(1), event)
@@ -45,7 +53,8 @@ package object transformer {
     import spark.implicits._
     Try(
     pageAccessCounts.map{
-      pa => pa.head match {
+      pa =>
+        pa.filter(!($"event" === typedLit(UNDEFINED.event))).head match {
         case PageAccessEventCount(_, _ , PAGE_TURN.event) => pa.groupBy("user_ident").agg(sum("event_count") as "total_views")
             .withColumn("total_enters", typedLit(Some(0)))
            .withColumn("total_exits", typedLit(Some(0)))
@@ -60,11 +69,6 @@ package object transformer {
           .withColumn("total_views", typedLit(Some(0)))
           .withColumn("total_enters", typedLit(Some(0)))
           .withColumn("total_undefined", typedLit(Some(0)))
-          .as[UserDeetsDescription]
-        case PageAccessEventCount(_, _ , UNDEFINED.event) => pa.groupBy("user_ident").agg(sum("event_count") as "total_undefined")
-          .withColumn("total_views", typedLit(Some(0)))
-          .withColumn("total_enters", typedLit(Some(0)))
-          .withColumn("total_exits", typedLit(Some(0)))
           .as[UserDeetsDescription]
         case _ => spark.emptyDataset[UserDeetsDescription]
       }
@@ -81,7 +85,12 @@ package object transformer {
     Try(
       userEventTotals.reduce{
         (ue1: Dataset[UserDeetsDescription], ue2: Dataset[UserDeetsDescription]) =>
-            ue1.unionByName(ue2)
+            ue1.unionByName(ue2).groupBy("user_ident").agg(
+              max("total_views").as("total_views"),
+              max("total_enters").as("total_enters"),
+              max("total_exits").as("total_exits"),
+              max("total_undefined").as("total_undefined")
+            ).as[UserDeetsDescription]
       }
     )
   }
