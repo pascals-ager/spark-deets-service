@@ -61,18 +61,16 @@ Setting up a production cluster from this needs a lot more work. However you are
 
 ### Test results
 ```
-sbt test
+sbt "set coverageEnabled := true" coverage test coverageReport
 [info] UserDeetServiceTest:
 [info] - ConfigsTest
-[info] - Basic read counts
 [info] - Events aggregate test
-[info] Run completed in 2 minutes, 40 seconds.
-[info] Total number of tests run: 3
+[info] Run completed in 4 minutes, 51 seconds.
+[info] Total number of tests run: 2
 [info] Suites: completed 1, aborted 0
-[info] Tests: succeeded 3, failed 0, canceled 0, ignored 0, pending 0
-[info] All tests passed.M
-
-sbt "set coverageEnable := true" coverage test coverageReport
+[info] Tests: succeeded 2, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 335 s, completed Jul 28, 2019 6:06:30 PM
 [info] Waiting for measurement data to sync...
 [info] Reading scoverage instrumentation [/home/scala/spark-deets-service/target/scala-2.11/scoverage-data/scoverage.coverage.xml]
 [info] Reading scoverage measurements...
@@ -80,14 +78,14 @@ sbt "set coverageEnable := true" coverage test coverageReport
 [info] Written Cobertura report [/home/scala/spark-deets-service/target/scala-2.11/coverage-report/cobertura.xml]
 [info] Written XML coverage report [/home/scala/spark-deets-service/target/scala-2.11/scoverage-report/scoverage.xml]
 [info] Written HTML coverage report [/home/scala/spark-deets-service/target/scala-2.11/scoverage-report/index.html]
-[info] Statement coverage.: 62.07%
-[info] Branch coverage....: 66.67%
+[info] Statement coverage.: 74.78%
+[info] Branch coverage....: 0.00%
 [info] Coverage reports completed
-[info] All done. Coverage was [62.07%]
+[info] All done. Coverage was [74.78%]
 ```
 
-There seems to be a bug with scoverage adding runtime dependencies on spark fat jar. Hence after a scoverageReport is
-generated, one must clean and build the assembly once again.
+There seems to be a bug with scoverage which adds runtime dependencies on spark uber jar. To avoid this, after a scoverageReport is
+generated, it is important to clean and build the assembly once again.
 Note: coverage is disabled by default.
 
 ### Results
