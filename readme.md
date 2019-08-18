@@ -54,11 +54,6 @@ Setting up a production cluster from this needs a lot more work. However you are
  8. ./bin/spark-submit --master yarn --deploy-mode cluster --queue default --class io.pascals.spark.UserDeetService user-deet-service.jar
  9. The user_details (result dataset) is written out to hdfs /tmp and can be reviewed at http://node-master:50070/explorer.html#/tmp/user_details
 
-### Assumption made about the data
- 1. Page turns data is used to calculate total views
- 2. Page enters data is used to calculate total enters
- 3. Page exits data is used to calculate total exits
-
 ### Test results
 ```
 sbt "set coverageEnabled := true" coverage test coverageReport
