@@ -39,3 +39,20 @@ lazy val sparkTestProcessor = (project in file("."))
   .settings(libraryDependencies ++= sparkDependencies)
   .enablePlugins(AssemblyPlugin)
   .settings(assemblySettings: _*)
+
+publishMavenStyle := true
+publishArtifact in Test := false
+publishTo := {
+  val nexus = "http://my_nexus_repository/nexus/"
+  if (version.value.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases" at nexus + "content/repositories/releases")
+}
+
+artifact in (Compile, assembly) := {
+  val art = (artifact in (Compile, assembly)).value
+  art.withClassifier(Some("assembly"))
+}
+
+addArtifact(artifact in (Compile, assembly), assembly)
